@@ -67,6 +67,10 @@ EOF
 
     echo "$TARGET_NAME" > /etc/hostname
 
+    # Prevent services from starting during package installation
+    echo -e '#!/bin/sh\nexit 101' > /usr/sbin/policy-rc.d
+    chmod +x /usr/sbin/policy-rc.d
+
     # we need to install systemd first, to configure machine id
     apt-get update
     apt-get install -y libterm-readline-gnu-perl systemd-sysv
@@ -293,6 +297,9 @@ function finish_up() {
     # remove diversion (why??)
     rm /sbin/initctl
     dpkg-divert --rename --remove /sbin/initctl
+
+    # Remove policy-rc.d to allow services to start normally
+    rm -f /usr/sbin/policy-rc.d
 
     rm -rf /tmp/* ~/.bash_history
 }
