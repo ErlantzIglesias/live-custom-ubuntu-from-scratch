@@ -52,11 +52,24 @@ function chroot_enter_setup() {
 }
 
 function chroot_exit_teardown() {
-    sudo chroot chroot umount /proc
-    sudo chroot chroot umount /sys
-    sudo chroot chroot umount /dev/pts
-    sudo umount chroot/dev
-    sudo umount chroot/run
+    echo "=====> Cleaning up chroot environment..."
+    
+    # Kill any processes that might be using files in the chroot
+    echo "Killing any remaining processes in chroot..."
+    sudo lsof +D chroot 2>/dev/null | awk 'NR>1 {print $2}' | sort -u | xargs -r sudo kill -9 2>/dev/null || true
+    
+    # Wait a moment for processes to terminate
+    sleep 1
+    
+    # Unmount in reverse order with lazy unmounting
+    echo "Unmounting chroot directories..."
+    sudo chroot chroot umount /proc 2>/dev/null || true
+    sudo chroot chroot umount /sys 2>/dev/null || true
+    sudo chroot chroot umount /dev/pts 2>/dev/null || true
+    sudo umount -lf chroot/dev 2>/dev/null || true
+    sudo umount -lf chroot/run 2>/dev/null || true
+    
+    echo "Chroot cleanup completed."
 }
 
 function check_host() {
